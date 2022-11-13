@@ -90,11 +90,22 @@ class GetTask(View):
         return:
             JsonRespons: the response object
         """
-        task = Task.object.get(id=id)
+        auth_header = request.headers.get('Authorization', None)
 
-        return JsonResponse({'task': task.to_json()})
+        if auth_header:
+            username, password = decode_auth_header(auth_header)
 
+            user = authenticate(username=username, password=password)
 
+            if user:
+                
+                task = Task.objects.get(id=id)
+
+                return JsonResponse({'task': task.to_json()})
+            else:
+                return JsonResponse({'message': 'Invalid credentials'})
+        else:
+            return JsonResponse({'error': 'Authorization header is missing'}, status=401)
 
 
 class CreateTask(View):
