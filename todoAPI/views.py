@@ -52,6 +52,17 @@ class UpdateTask(View):
         updated_at: datetime
 
         """
+        auth_header = request.header.get('Authorization', None)
+
+        if auth_header:
+            username, password = decode_auth_header(auth_header)
+
+            user = authenticate(username=username, password=password)
+
+            if user:
+
+                return JsonResponse()
+
         data=request.POST
         task=data['tasks']
         description=data['description']
@@ -99,9 +110,13 @@ class GetTask(View):
 
             if user:
                 
-                task = Task.objects.get(id=id)
-
-                return JsonResponse({'task': task.to_json()})
+                tasks = Task.objects.filter(user=user)
+                task_json = [task.to_json() for task in tasks]
+                for task in task_json:
+                    if task['id'] == id:
+                        return JsonResponse(task, safe=False)
+                    # else:
+                return JsonResponse({'message': 'You have no such task!'})
             else:
                 return JsonResponse({'message': 'Invalid credentials'})
         else:
