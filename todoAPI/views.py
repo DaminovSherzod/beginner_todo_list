@@ -114,8 +114,9 @@ class GetTask(View):
                 task_json = [task.to_json() for task in tasks]
                 for task in task_json:
                     if task['id'] == id:
+                        
                         return JsonResponse(task, safe=False)
-                    # else:
+                    
                 return JsonResponse({'message': 'You have no such task!'})
             else:
                 return JsonResponse({'message': 'Invalid credentials'})
