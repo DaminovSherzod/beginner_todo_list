@@ -52,7 +52,7 @@ class UpdateTask(View):
         updated_at: datetime
 
         """
-        auth_header = request.header.get('Authorization', None)
+        auth_header = request.headers.get('Authorization', None)
 
         if auth_header:
             username, password = decode_auth_header(auth_header)
@@ -60,35 +60,23 @@ class UpdateTask(View):
             user = authenticate(username=username, password=password)
 
             if user:
+                
+                tasks = Task.objects.filter(user=user)
+                task_json = [task.to_json() for task in tasks]
+                for i in task_json:
+                    if i['id'] == id:
+                        
+                        i['title'] = request.POST['task']
+                        i['description'] = request.POST['description']
+                        i['status'] = request.POST['status']
+                        
+                        return JsonResponse(i, safe=False)
 
-                return JsonResponse()
-
-        data=request.POST
-        task=data['tasks']
-        description=data['description']
-        status=data['status']
-        all_task=Task.objects.all()
-
-        for i in all_task:
-            if i.id == id:
-                i.tasks = task
-                i.status=status
-                i.description=description
-                i.save()
-
-                json_task={
-                    'id':i.id,
-                    'task':i.tasks,
-                    'description':i.description,
-                    'status':i.status,
-                    'created_at':i.created_at,
-                    'updated_id':i.updated_id,
-                }
-
-        return JsonResponse(json_task)
-
-
-
+                return JsonResponse({'message': 'You have no such task!'})
+            else:
+                return JsonResponse({'message': 'Invalid credentials'})
+        else:
+            return JsonResponse({'error': 'Authorization header is missing'}, status=401)
 
 
 class GetTask(View):
@@ -114,7 +102,7 @@ class GetTask(View):
                 task_json = [task.to_json() for task in tasks]
                 for task in task_json:
                     if task['id'] == id:
-                        
+
                         return JsonResponse(task, safe=False)
                     
                 return JsonResponse({'message': 'You have no such task!'})
