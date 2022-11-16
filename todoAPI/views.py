@@ -65,12 +65,12 @@ class UpdateTask(View):
                 task_json = [task.to_json() for task in tasks]
                 for i in task_json:
                     if i['id'] == id:
-                        
-                        i['title'] = request.POST['task']
-                        i['description'] = request.POST['description']
-                        i['status'] = request.POST['status']
-                        
-                        return JsonResponse(i, safe=False)
+                        x = Task.objects.filter(user=user).get(id=id)
+                        x.task = request.POST['task']
+                        x.description = request.POST['description']
+                        x.status = request.POST['status']
+                        x.save()
+                        return JsonResponse(x.to_json(), safe=False)
 
                 return JsonResponse({'message': 'You have no such task!'})
             else:
@@ -199,9 +199,58 @@ class CreateTask(View):
         
 
        
+class DeleteTask(View):
+    def post(self, request, id):
+        '''
+        Delete a task
+
+        args:
+            request: the request object
+            id: the task id
+        return:
+            JsonRespons: the response object
+        '''
+        auth_header = request.headers.get('Authorization')
+                
+        if auth_header:
+            username, password = decode_auth_header(auth_header)
+
+            user = authenticate(username=username, password=password)
+
+            if user:
+
+                tasks = Task.objects.filter(user=user).get(id=id)
+                tasks.delete()
+                return JsonResponse(tasks.to_json(), safe=False)
+            else:
+                return JsonResponse({'message': 'Invalid credentials'})
+        else:
+            return JsonResponse({'error': 'Authorization header is missing'}, status=401)
 
 
+class CompletedTask(View):
+    def get(self, request):
+        '''
+        Get all completed tasks
+
+        args:
+            request: the request object
+        return:
+            JsonRespons: the response object
+        '''
+        auth_header = request.headers.get('Authorization')
         
+        if auth_header:
+            username, password = decode_auth_header(auth_header)
+            user = authenticate(username=username, password=password)
 
-        
+            if user:
+            
+                tasks = Task.objects.filter(user=user).filter(status=True)
+                task_json = [task.to_json() for task in tasks]
 
+                return JsonResponse(task_json, safe=False)
+            else:
+                return JsonResponse({'message': 'Invalid credentials'})
+        else:
+            return JsonResponse({'error': 'Authorization header is missing'}, status=401)
