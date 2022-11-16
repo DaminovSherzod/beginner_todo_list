@@ -254,3 +254,26 @@ class CompletedTask(View):
                 return JsonResponse({'message': 'Invalid credentials'})
         else:
             return JsonResponse({'error': 'Authorization header is missing'}, status=401)
+
+
+class IncompletedTask(View):
+    def get(self, request):
+        '''
+        Get all incompleted tasks
+
+        args:
+            request: the request object
+        return:
+            JsonResponse: the response object
+        '''
+        auht_header = request.headers.get('Authorization')
+
+        if auht_header:
+            username, password = decode_auth_header(auht_header)
+            user = authenticate(username=username, password=password)
+
+            if user:
+                tasks = Task.objects.filter(user=user).filter(status=False)
+                task_json = [task.to_json() for task in tasks]
+
+                return JsonResponse(task_json, safe=False)
